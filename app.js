@@ -17,6 +17,7 @@ const events = [
   ['2026-12-31', 'Silvester', '🎆', 'Fun & Feste', 'Tschüss 2026, hallo neues Jahr!'],
   ['2027-01-01', 'Neujahr', '🎊', 'Feiertag', 'Neues Jahr, neue Highlights.'],
   ['2027-01-06', 'Heilige Drei Könige', '👑', 'Feiertag', 'Gesetzlicher Feiertag in Baden-Württemberg.'],
+  ['2027-01-20', 'Pauls 10. Geburtstag', '🎂', 'Geburtstag', 'Endlich zweistellig! 🎉 Paul wird 10 – Zeit für Kuchen, Geschenke und eine große Portion Vorfreude.'],
   ['2027-02-04', 'Schmotziger Donnerstag', '🎭', 'Fasching', 'Jetzt wird es närrisch!'],
   ['2027-02-08', 'Rosenmontag', '🎭', 'Fasching', 'Höhepunkt der Faschingszeit.'],
   ['2027-02-09', 'Faschingsdienstag', '🎉', 'Fasching', 'Noch einmal richtig feiern.'],
@@ -82,6 +83,7 @@ function themeFor(item) {
   if(/Fasch|Rosenmontag|Aschermittwoch/i.test(item.title)) return 'pink';
   if(/Weihnacht|Nikolaus|Advent|Heilige Drei Könige/i.test(item.title)) return 'purple';
   if(/Oster|Gründonnerstag|Palmsonntag|Karfreitag|Pfingst/i.test(item.title)) return 'green';
+  if(/Geburtstag/i.test(item.title)) return 'gold';
   if(/Silvester|Neujahr|Maientag/i.test(item.title)) return 'gold';
   if(/Sommer|Muttertag|Vatertag/i.test(item.title)) return 'blue';
   return 'purple';
