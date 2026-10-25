@@ -59,137 +59,171 @@ const offDays = [
   description:'Beweglicher Ferientag / unterrichtsfreier Tag laut Nürtinger Ferienplan.'
 }));
 
-const allItems = [...events,...vacations,...offDays].sort((a,b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title,'de'));
+
+// Das Swipe-Deck zeigt standardmäßig Highlights, frühester Termin zuerst.
+// Ferien und zusätzliche schulfreie Tage sind separat filterbar.
+const allItems = [...events, ...vacations, ...offDays];
 const $ = selector => document.querySelector(selector);
-let activeFilter = 'all';
-let selectedDay = null;
-let showCount = 7;
-let shownMonth;
-let lastRenderedDay = '';
+const safeHTML = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const mediumDate = new Intl.DateTimeFormat('de-DE', {weekday:'short', day:'numeric', month:'long', year:'numeric'});
+const compactDate = new Intl.DateTimeFormat('de-DE', {day:'numeric', month:'short', year:'numeric'});
+const shortToday = new Intl.DateTimeFormat('de-DE', {weekday:'short',day:'2-digit',month:'short'});
 
-function dateParts(iso){const [year,month,day]=iso.split('-').map(Number);return {year,month,day};}
-function localDate(iso){const d=dateParts(iso);return new Date(d.year,d.month-1,d.day);}
-function dateISO(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
-function todayISO(){return dateISO(new Date());}
-function dayDiff(from,to){const a=dateParts(from),b=dateParts(to);return Math.round((Date.UTC(b.year,b.month-1,b.day)-Date.UTC(a.year,a.month-1,a.day))/86400000);}
-const mediumDate = new Intl.DateTimeFormat('de-DE',{day:'numeric',month:'short',year:'numeric'});
-const dateFull = new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-function fullDate(iso){return dateFull.format(localDate(iso));}
-function shortRange(item){return item.start===item.end ? mediumDate.format(localDate(item.start)) : `${mediumDate.format(localDate(item.start))} – ${mediumDate.format(localDate(item.end))}`;}
-function containsDate(item,day){return item.start<=day&&item.end>=day;}
-function remainingText(item,now){if(containsDate(item,now))return 'Heute';const days=dayDiff(now,item.start);return days===1?'Morgen':`In ${days} Tagen`;}
-function safeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function kindLabel(item){if(item.kind==='vacation')return 'FERIEN';if(item.kind==='off')return 'SCHULFREI';return item.category.toUpperCase();}
-
-function renderHeader(now){const d=localDate(now);const day=new Intl.DateTimeFormat('de-DE',{weekday:'short'}).format(d).replace('.','').toUpperCase();const rest=new Intl.DateTimeFormat('de-DE',{day:'numeric',month:'short'}).format(d).toUpperCase();$('#today-pill').innerHTML=`<strong>${safeHTML(day)}</strong> &nbsp; ${safeHTML(rest)} &nbsp; ${d.getFullYear()}`;}
-
-let nextFeatured=null;
-function renderHero(now){
-  nextFeatured=events.find(item=>item.date>=now) || null;
-  if(!nextFeatured){
-    $('#hero-content').innerHTML=`<p class="hero-category">SCHULJAHR 2026/27</p><h2 id="next-event-heading">So viele gute Erinnerungen. ✨</h2><p class="hero-description">Alle Highlights dieses Schuljahres liegen inzwischen zurück. Schau in die Timeline und entdecke sie noch einmal.</p>`;
-    $('#hero-emoji').textContent='🌟';$('#hero-date-art').textContent='DAS WAR EIN GUTES JAHR';$('#countdown-heading').textContent='BIS ZUM NÄCHSTEN EVENT';
-    setCounts([0,0,0,0]);return;
-  }
-  const heroDescription=nextFeatured.description;
-  $('#hero-content').innerHTML=`<p class="hero-category">${safeHTML(nextFeatured.category)}</p><h2 id="next-event-heading">${safeHTML(nextFeatured.title)}</h2><p class="hero-description">${safeHTML(heroDescription)} <strong>${safeHTML(fullDate(nextFeatured.date))}</strong></p>`;
-  $('#hero-emoji').textContent=nextFeatured.emoji;
-  $('#hero-date-art').textContent=mediumDate.format(localDate(nextFeatured.date)).toUpperCase();
-  $('#countdown-heading').textContent=nextFeatured.date===now?'HEUTE IST ES SOWEIT!':'DER COUNTDOWN LÄUFT';
-  updateCountdown();
+function parts(iso) { const [year,month,day] = iso.split('-').map(Number); return [year,month,day]; }
+function asDate(iso) { const [year,month,day] = parts(iso); return new Date(year,month-1,day); }
+function isoToday() { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; }
+function calendarDaysUntil(iso) { const [y,m,d]=parts(iso),[ty,tm,td]=parts(isoToday()); return Math.round((Date.UTC(y,m-1,d)-Date.UTC(ty,tm-1,td))/86400000); }
+function during(item, day=isoToday()) { return item.start<=day && item.end>=day; }
+function fullRange(item) { const start=mediumDate.format(asDate(item.start)); return item.start===item.end ? start : `${compactDate.format(asDate(item.start))} – ${compactDate.format(asDate(item.end))}`; }
+function themeFor(item) {
+  if(item.kind==='vacation') return /Weihnacht/i.test(item.title)?'purple':/Herbst/i.test(item.title)?'orange':'blue';
+  if(item.kind==='off') return /Fasch/i.test(item.title)?'pink':'green';
+  if(/Halloween/i.test(item.title)) return 'orange';
+  if(/Fasch|Rosenmontag|Aschermittwoch/i.test(item.title)) return 'pink';
+  if(/Weihnacht|Nikolaus|Advent|Heilige Drei Könige/i.test(item.title)) return 'purple';
+  if(/Oster|Gründonnerstag|Palmsonntag|Karfreitag|Pfingst/i.test(item.title)) return 'green';
+  if(/Silvester|Neujahr|Maientag/i.test(item.title)) return 'gold';
+  if(/Sommer|Muttertag|Vatertag/i.test(item.title)) return 'blue';
+  return 'purple';
 }
-function setCounts(counts){['days','hours','minutes','seconds'].forEach((key,i)=>{$(`#count-${key}`).textContent=String(counts[i]).padStart(2,'0');});}
-function updateCountdown(){
-  if(!nextFeatured){setCounts([0,0,0,0]);return;}
-  const now=new Date();
-  if(dateISO(now)===nextFeatured.date){setCounts([0,0,0,0]);return;}
-  const ms=Math.max(0,localDate(nextFeatured.date)-now);
-  const totalSeconds=Math.floor(ms/1000);
-  setCounts([Math.floor(totalSeconds/86400),Math.floor(totalSeconds%86400/3600),Math.floor(totalSeconds%3600/60),totalSeconds%60]);
+function categoryFor(item) { return item.kind==='vacation'?'FERIEN':item.kind==='off'?'SCHULFREI':item.category.toLocaleUpperCase('de'); }
+function countMs(item, now=new Date()) {
+  if(during(item)) return 0;
+  return Math.max(0, asDate(item.start).getTime()-now.getTime());
 }
-
-function renderStats(now){
-  $('#stat-highlights').textContent=events.filter(item=>item.date>=now).length;
-  $('#stat-off').textContent='9'; // 4 bewegliche + 3 unterrichtsfreie + 2 gesetzliche Feiertage außerhalb der Ferien.
-  const nextVacation=vacations.find(item=>item.end>=now);
-  $('#stat-vacation').textContent=nextVacation?nextVacation.title.replace(' (Rest)',''):'Alle vorbei';
-  $('#stat-vacation-sub').textContent=nextVacation?(containsDate(nextVacation,now)?'Laufen gerade! 🎉':remainingText(nextVacation,now)):'Das Schuljahr ist abgeschlossen';
-  const upcomingBreak=nextVacation;
-  if(upcomingBreak){
-    $('#break-preview').innerHTML=`<div class="break-name">${safeHTML(upcomingBreak.title)}</div><div class="break-date">${safeHTML(shortRange(upcomingBreak))}</div><span class="break-count">${containsDate(upcomingBreak,now)?'🎉 Du hast gerade Ferien!':'⏳ '+safeHTML(remainingText(upcomingBreak,now))}</span>`;
-  } else $('#break-preview').innerHTML='<div class="break-name">Alle Ferien sind vorbei.</div><div class="break-date">Hier erscheinen die Ferien aus dem Schuljahr 2026/27.</div>';
+function clockParts(item, now) {
+  const seconds = Math.floor(countMs(item, now)/1000);
+  return [Math.floor(seconds/86400), Math.floor(seconds%86400/3600), Math.floor(seconds%3600/60), seconds%60];
 }
+const pad2 = n=>String(n).padStart(2,'0');
+let filter='event';
+let visibleItems=[];
+let activeIndex=0;
+let renderedDay='';
+let rafScroll=null;
 
-function isRelevant(item,now){return item.end>=now;}
-function renderTimeline(){
-  const now=todayISO(),search=$('#search').value.trim().toLocaleLowerCase('de'),includePast=$('#show-past').checked;
-  let items=allItems.filter(item=>{
-    if(activeFilter==='event'&&item.kind!=='event')return false;
-    if(activeFilter==='vacation'&&item.kind!=='vacation')return false;
-    if(activeFilter==='off'&&!(item.kind==='off'||item.freeDay))return false;
-    if(selectedDay){if(!containsDate(item,selectedDay))return false;}
-    else if(!includePast&&!isRelevant(item,now))return false;
-    if(search&&![item.title,item.category,item.description].some(x=>x.toLocaleLowerCase('de').includes(search)))return false;
+function getItems() {
+  const today=isoToday();
+  return allItems.filter(item => {
+    if(item.end<today) return false;
+    if(filter==='event') return item.kind==='event';
+    if(filter==='vacation') return item.kind==='vacation';
+    if(filter==='off') return item.kind==='off'||item.freeDay;
     return true;
+  }).sort((a,b)=>{
+    // Bereits laufende Zeiträume haben einen Countdown von null.
+    const aActive=during(a,today)?0:1;
+    const bActive=during(b,today)?0:1;
+    return aActive-bActive || a.start.localeCompare(b.start) || a.title.localeCompare(b.title,'de');
   });
-  items.sort((a,b)=>a.start.localeCompare(b.start) || a.title.localeCompare(b.title,'de'));
-  $('#results-info').textContent=`${items.length} ${items.length===1?'Termin':'Termine'}`;
-  $('#show-more').hidden=items.length<=showCount;
-  $('#timeline').innerHTML=items.length?items.slice(0,showCount).map(item=>{
-    const dateText=item.start===item.end?fullDate(item.start):shortRange(item);
-    const daysIn=dayDiff(now,item.start);
-    const relative=containsDate(item,now)?'Heute':daysIn>0?`in ${daysIn} Tagen`:'Vorbei';
-    return `<article class="timeline-card ${safeHTML(item.kind)}"><div class="event-icon" aria-hidden="true">${safeHTML(item.emoji)}</div><div class="event-info"><div class="event-kicker">${safeHTML(kindLabel(item))}${item.freeDay?' · SCHULFREI':''}</div><h3 class="event-name">${safeHTML(item.title)}</h3><p class="event-date">${safeHTML(dateText)}</p><p class="event-description">${safeHTML(item.description)}</p></div><div class="event-right"><div class="days-label">${daysIn>0?`${daysIn}d`:relative==='Heute'?'Heute':'✓'}</div><div class="days-sub">${safeHTML(relative)}</div></div></article>`;
-  }).join(''):`<div class="empty"><strong>Hier ist noch nichts los.</strong><br />Andere Kategorie wählen, Suchbegriff löschen oder vergangene Termine anzeigen.</div>`;
-  if(selectedDay){
-    $('#selected-day').hidden=false;
-    $('#selected-day').innerHTML=`Termine am <strong>${safeHTML(fullDate(selectedDay))}</strong> <button type="button" id="clear-day">Filter löschen ×</button>`;
-    $('#clear-day').addEventListener('click',()=>{selectedDay=null;showCount=7;renderSelectedDay();renderTimeline();renderCalendar();});
-  } else $('#selected-day').hidden=true;
 }
-function renderSelectedDay(){/* Placeholder for centralizing selected-day behavior. */}
-
-function renderCalendar(){
-  const year=shownMonth.getFullYear(),month=shownMonth.getMonth();
-  $('#calendar-month').textContent=new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(shownMonth);
-  const start=new Date(year,month,1);const offset=(start.getDay()+6)%7;
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const cells=[];
-  for(let i=0;i<offset;i++)cells.push('<span aria-hidden="true"></span>');
-  for(let d=1;d<=daysInMonth;d++){
-    const iso=dateISO(new Date(year,month,d));
-    const hasEvent=events.some(item=>item.date===iso);
-    const hasFree=vacations.some(item=>containsDate(item,iso))||offDays.some(item=>containsDate(item,iso))||events.some(item=>item.date===iso&&item.freeDay);
-    const classes=['calendar-day'];if(iso===todayISO())classes.push('is-today');if(selectedDay===iso)classes.push('selected');if(hasEvent||hasFree)classes.push('has-event');
-    const dayEvents=allItems.filter(item=>containsDate(item,iso)).map(item=>item.title).join(', ');
-    const desc=dayEvents?`${d}. ${new Intl.DateTimeFormat('de-DE',{month:'long'}).format(new Date(year,month,d))}: ${dayEvents}`:`${d}. ${new Intl.DateTimeFormat('de-DE',{month:'long'}).format(new Date(year,month,d))}`;
-    cells.push(`<button class="${classes.join(' ')}" type="button" data-day="${iso}" aria-label="${safeHTML(desc)}" aria-pressed="${selectedDay===iso}">${d}<span class="dots" aria-hidden="true">${hasEvent?'<i class="dot"></i>':''}${hasFree?'<i class="dot free"></i>':''}</span></button>`);
-  }
-  $('#calendar-grid').innerHTML=cells.join('');
-  $('#calendar-grid').querySelectorAll('[data-day]').forEach(el=>el.addEventListener('click',()=>{
-    selectedDay=selectedDay===el.dataset.day?null:el.dataset.day;showCount=7;
-    renderTimeline();renderCalendar();$('#termine').scrollIntoView({behavior:'smooth',block:'start'});
-  }));
+function cardHTML(item,index,total) {
+  return `<article class="swipe-card" data-id="${safeHTML(item.id)}" data-theme="${themeFor(item)}" role="group" aria-roledescription="Karte" aria-label="${safeHTML(`${index+1} von ${total}: ${item.title}, ${fullRange(item)}`)}">
+    <div class="card-top"><span class="card-category"><span class="card-category-dot" aria-hidden="true"></span>${safeHTML(categoryFor(item))}</span><span class="card-index">${pad2(index+1)} / ${pad2(total)}</span></div>
+    <div class="card-visual" aria-hidden="true"><span class="card-halo"></span><span class="card-orbit"></span><span class="card-orbit second"></span><span class="card-emoji">${safeHTML(item.emoji)}</span><span class="card-spark one">✳</span><span class="card-spark two">✦</span></div>
+    <div class="card-copy"><p class="card-eyebrow">✦ DEIN COUNTDOWN</p><h2 class="card-title">${safeHTML(item.title)}</h2><p class="card-description">${safeHTML(item.description)}</p></div>
+    <div class="card-countdown" aria-label="Verbleibende Zeit"><div class="card-days"><strong class="card-days-number" data-counter="days">--</strong><span class="card-days-unit">TAGE</span></div><div class="card-hms"><div><strong data-counter="hours">--</strong><span>STD</span></div><div><strong data-counter="minutes">--</strong><span>MIN</span></div><div><strong data-counter="seconds">--</strong><span>SEK</span></div></div></div>
+    <div class="card-date"><span class="card-date-main"><span aria-hidden="true">◷</span> ${safeHTML(fullRange(item))}</span><span class="card-status">${during(item)?'JETZT ✦':'COUNTDOWN ↗'}</span></div>
+  </article>`;
 }
-
+function updateCounters() {
+  const now=new Date();
+  $('#swipe-track').querySelectorAll('.swipe-card').forEach((card,index)=>{
+    const item=visibleItems[index];
+    if(!item)return;
+    const [days,hours,minutes,seconds]=clockParts(item,now);
+    card.querySelector('[data-counter="days"]').textContent=String(days);
+    card.querySelector('[data-counter="hours"]').textContent=pad2(hours);
+    card.querySelector('[data-counter="minutes"]').textContent=pad2(minutes);
+    card.querySelector('[data-counter="seconds"]').textContent=pad2(seconds);
+  });
+}
+function renderOverview() {
+  $('#overview-list').innerHTML=visibleItems.length ? visibleItems.map((item,index)=>{
+    const days=calendarDaysUntil(item.start);
+    const countdown=during(item)?'Jetzt':days===1?'Morgen':`In ${days} Tagen`;
+    return `<button type="button" class="overview-item" data-index="${index}"><span class="overview-item-emoji" aria-hidden="true">${safeHTML(item.emoji)}</span><span class="overview-item-text"><strong>${safeHTML(item.title)}</strong><small>${safeHTML(fullRange(item))}</small></span><span class="overview-item-days">${safeHTML(countdown)}</span></button>`;
+  }).join('') : '<p>Für diese Kategorie stehen keine weiteren Termine im Kalender.</p>';
+}
+function updateNavigation(){
+  const total=visibleItems.length;
+  $('#deck-position').textContent=`${pad2(total?activeIndex+1:0)} / ${pad2(total)}`;
+  $('#prev-card').disabled=activeIndex<=0;
+  $('#next-card').disabled=activeIndex>=total-1;
+  $('#progress-fill').style.width=total?`${(activeIndex+1)/total*100}%`:'0%';
+  const after=visibleItems[activeIndex+1];
+  $('#next-hint').textContent=after?`Danach: ${after.emoji} ${after.title}`:total?'Das ist der letzte Termin ✳':'Keine weiteren Termine';
+}
+function goTo(index, instant=false){
+  if(!visibleItems.length) return;
+  activeIndex=Math.max(0,Math.min(index,visibleItems.length-1));
+  const track=$('#swipe-track');
+  track.scrollTo({left:track.clientWidth*activeIndex,behavior:instant||window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  updateNavigation();
+}
+function renderDeck(){
+  visibleItems=getItems();
+  activeIndex=0;
+  const track=$('#swipe-track');
+  track.innerHTML=visibleItems.length?visibleItems.map((item,index)=>cardHTML(item,index,visibleItems.length)).join(''):'<div class="empty-state"><strong>Keine Termine mehr ✳</strong><p>Für diesen Zeitraum sind keine weiteren Ereignisse eingetragen.</p></div>';
+  track.scrollLeft=0;
+  updateCounters();
+  updateNavigation();
+  renderOverview();
+}
+function setFilter(next){
+  filter=next;
+  document.querySelectorAll('[data-filter]').forEach(button=>{
+    const active=button.dataset.filter===filter;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-pressed',String(active));
+  });
+  renderDeck();
+}
 function init(){
-  const now=todayISO();shownMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
-  renderHeader(now);renderHero(now);renderStats(now);renderCalendar();renderTimeline();lastRenderedDay=now;
-  $('.filters').addEventListener('click',e=>{
-    const button=e.target.closest('button[data-filter]');if(!button)return;
-    activeFilter=button.dataset.filter;showCount=7;
-    document.querySelectorAll('[data-filter]').forEach(el=>{const active=el===button;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});
-    renderTimeline();
+  renderedDay=isoToday();
+  $('#today-short').textContent=shortToday.format(new Date()).toLocaleUpperCase('de');
+  renderDeck();
+  $('#filters').addEventListener('click',event=>{
+    const target=event.target.closest('[data-filter]');
+    if(target) setFilter(target.dataset.filter);
   });
-  $('#search').addEventListener('input',()=>{showCount=7;renderTimeline();});
-  $('#show-past').addEventListener('change',()=>{showCount=7;renderTimeline();});
-  $('#show-more').addEventListener('click',()=>{showCount+=7;renderTimeline();});
-  $('#prev-month').addEventListener('click',()=>{shownMonth=new Date(shownMonth.getFullYear(),shownMonth.getMonth()-1,1);renderCalendar();});
-  $('#next-month').addEventListener('click',()=>{shownMonth=new Date(shownMonth.getFullYear(),shownMonth.getMonth()+1,1);renderCalendar();});
+  $('#prev-card').addEventListener('click',()=>goTo(activeIndex-1));
+  $('#next-card').addEventListener('click',()=>goTo(activeIndex+1));
+  $('#swipe-track').addEventListener('scroll',()=>{
+    if(rafScroll!==null) cancelAnimationFrame(rafScroll);
+    rafScroll=requestAnimationFrame(()=>{
+      rafScroll=null;
+      const track=$('#swipe-track');
+      const next=Math.max(0,Math.min(visibleItems.length-1,Math.round(track.scrollLeft/Math.max(1,track.clientWidth))));
+      if(next!==activeIndex){activeIndex=next;updateNavigation();}
+    });
+  },{passive:true});
+  $('#swipe-track').addEventListener('keydown',event=>{
+    if(event.key==='ArrowRight'){event.preventDefault();goTo(activeIndex+1);}
+    if(event.key==='ArrowLeft'){event.preventDefault();goTo(activeIndex-1);}
+  });
+  const dialog=$('#overview-dialog');
+  $('#open-overview').addEventListener('click',()=>dialog.showModal());
+  $('#close-overview').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+  $('#overview-list').addEventListener('click',event=>{
+    const button=event.target.closest('[data-index]');
+    if(!button)return;
+    dialog.close();
+    goTo(Number(button.dataset.index),true);
+  });
+  window.addEventListener('resize',()=>{
+    // Nach Drehen des iPhones an der gleichen Karte bleiben.
+    goTo(activeIndex,true);
+  });
   setInterval(()=>{
-    const current=todayISO();
-    if(current!==lastRenderedDay){lastRenderedDay=current;renderHeader(current);renderHero(current);renderStats(current);renderCalendar();renderTimeline();}
-    else updateCountdown();
+    const day=isoToday();
+    if(renderedDay!==day){
+      renderedDay=day;
+      $('#today-short').textContent=shortToday.format(new Date()).toLocaleUpperCase('de');
+      renderDeck();
+    } else updateCounters();
   },1000);
 }
 
