@@ -42,6 +42,8 @@ Rechtsgrundlage/Abgleich: [Feiertage in Baden-Württemberg – Innenministerium]
 
 Diese Termine sind **zusätzliche Kalenderereignisse**, keine zusätzlichen Ferientage. Auch wenn sie in Ferien oder auf Wochenenden fallen, werden sie als einzelne Ereignisse geführt. Nicht jeder Anlass bedeutet schulfrei.
 
+Persönlicher Termin: Paul wird am **20.01.2027** zehn Jahre alt. Der Geburtstag ist nicht schulfrei.
+
 | Datum (ISO) | Wochentag | Termin | Kategorie |
 |---|---|---|---|
 | 2026-10-03 | Samstag | 🇩🇪 Tag der Deutschen Einheit | Feiertag |
@@ -58,6 +60,7 @@ Diese Termine sind **zusätzliche Kalenderereignisse**, keine zusätzlichen Feri
 | 2026-12-31 | Donnerstag | 🎆 Silvester | Jahreswechsel |
 | 2027-01-01 | Freitag | 🎊 Neujahr | Jahreswechsel / Feiertag |
 | 2027-01-06 | Mittwoch | 👑 Heilige Drei Könige | Feiertag |
+| 2027-01-20 | Mittwoch | 🎂 Pauls 10. Geburtstag | Persönliches Highlight |
 | 2027-02-04 | Donnerstag | 🎭 Schmotziger Donnerstag / Weiberfastnacht | Fasching |
 | 2027-02-08 | Montag | 🎭 Rosenmontag | Fasching |
 | 2027-02-09 | Dienstag | 🎉 Faschingsdienstag | Fasching |
