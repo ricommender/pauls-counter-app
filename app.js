@@ -322,7 +322,12 @@ function init(){
       rafScroll=null;
       const track=$('#swipe-track');
       const next=Math.max(0,Math.min(visibleItems.length-1,Math.round(track.scrollLeft/Math.max(1,track.clientWidth))));
-      if(next!==activeIndex){activeIndex=next;updateNavigation();}
+      if(next!==activeIndex){
+        activeIndex=next;
+        updateNavigation();
+        // Bei einem Finger-Swipe möglichst direkt haptisches Feedback anfordern.
+        if(isPaulsBirthday(visibleItems[next])) birthdayVibration();
+      }
       syncBirthdayCelebration();
     });
   },{passive:true});
