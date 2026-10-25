@@ -11,6 +11,7 @@ Ein mobiles, swipebares Countdown-Dashboard für die nächsten Feiertage, coolen
 - ⏳ **Live-Countdown** je Karte in Tagen, Stunden, Minuten und Sekunden.
 - 📅 **Chronologisch sortiert:** Der nächste Termin steht links, weiter entfernte Termine rechts. Abgelaufene Termine werden ausgeblendet.
 - 🎃 **Highlights** als Standard: Halloween, Weihnachten, Fasching, Ostern und mehr.
+- 🎂 **Pauls 10. Geburtstag** am 20. Januar 2027 – eigene goldene Countdown-Kachel.
 - 🌴 **Filter** für alle Termine, Ferien und weitere schulfreie Tage.
 - ☷ **Alle Termine:** Liste zum direkten Anspringen einer Karte.
 - ⬅️➡️ Alternative Navigation per Pfeilbuttons und Pfeiltasten.
