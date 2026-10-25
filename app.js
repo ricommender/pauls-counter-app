@@ -104,6 +104,106 @@ let activeIndex=0;
 let renderedDay='';
 let rafScroll=null;
 
+// Geburtstagsüberraschung: Fullscreen-Konfetti und Haptik (wo vom Browser unterstützt).
+const BIRTHDAY_DATE = '2027-01-20';
+let lastCelebratedId = null;
+let confettiFrame = null;
+let lastVibrationAt = -Infinity;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function isPaulsBirthday(item) {
+  return Boolean(item && item.kind === 'event' && item.date === BIRTHDAY_DATE);
+}
+
+function birthdayVibration() {
+  if(reducedMotion.matches || typeof navigator.vibrate !== 'function') return;
+  const now = performance.now();
+  if(now - lastVibrationAt < 850) return;
+  lastVibrationAt = now;
+  try { navigator.vibrate([75, 55, 110]); } catch (_) { /* Nicht unterstützte Haptik ignorieren. */ }
+}
+
+function stopConfetti() {
+  if(confettiFrame !== null) cancelAnimationFrame(confettiFrame);
+  confettiFrame = null;
+  const canvas = $('#confetti-canvas');
+  if(canvas) {
+    const context = canvas.getContext('2d');
+    if(context) context.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function launchConfetti() {
+  if(reducedMotion.matches || document.hidden) return;
+  const canvas = $('#confetti-canvas');
+  if(!canvas) return;
+  stopConfetti();
+  const context = canvas.getContext('2d');
+  if(!context) return;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(width * ratio);
+  canvas.height = Math.round(height * ratio);
+  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  const palette = ['#ffe16d','#ff79ad','#a3f8ff','#c5ff80','#ffffff','#b7a4ff','#ff9c60'];
+  const numberOfPieces = Math.min(260, Math.max(140, Math.round(width * height / 2000)));
+  const pieces = Array.from({length: numberOfPieces}, () => ({
+    x: Math.random() * width,
+    y: Math.random() < .65 ? Math.random() * height : -Math.random() * height * .7,
+    vx: (Math.random() - .5) * 3.6,
+    vy: 1.5 + Math.random() * 3.5,
+    spin: (Math.random() - .5) * .15,
+    angle: Math.random() * Math.PI * 2,
+    wobble: Math.random() * Math.PI * 2,
+    w: 4 + Math.random() * 6,
+    h: 5 + Math.random() * 10,
+    color: palette[Math.floor(Math.random() * palette.length)]
+  }));
+  let previousTime = 0;
+  let started = 0;
+  function frame(timestamp) {
+    if(!started) started = timestamp;
+    if(!previousTime) previousTime = timestamp;
+    const step = Math.min(2.3, (timestamp - previousTime) / 16.67);
+    previousTime = timestamp;
+    const elapsed = timestamp - started;
+    context.clearRect(0, 0, width, height);
+    context.globalAlpha = Math.max(0, Math.min(1, (4200 - elapsed) / 850));
+    for(const p of pieces) {
+      p.vy += .035 * step;
+      p.y += p.vy * step;
+      p.x += (p.vx + Math.sin(p.wobble) * .75) * step;
+      p.wobble += .06 * step;
+      p.angle += p.spin * step;
+      context.save();
+      context.translate(p.x, p.y);
+      context.rotate(p.angle);
+      context.fillStyle = p.color;
+      context.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      context.restore();
+    }
+    context.globalAlpha = 1;
+    if(elapsed < 4200 && !document.hidden) confettiFrame = requestAnimationFrame(frame);
+    else stopConfetti();
+  }
+  confettiFrame = requestAnimationFrame(frame);
+}
+
+function syncBirthdayCelebration() {
+  const current = visibleItems[activeIndex];
+  if(!isPaulsBirthday(current)) {
+    if(lastCelebratedId !== null) stopConfetti();
+    lastCelebratedId = null;
+    return;
+  }
+  if(lastCelebratedId === current.id) return;
+  lastCelebratedId = current.id;
+  launchConfetti();
+}
+
+
 function getItems() {
   const today=isoToday();
   return allItems.filter(item => {
@@ -121,7 +221,7 @@ function getItems() {
 }
 function cardHTML(item,index,total) {
   return `<article class="swipe-card" data-id="${safeHTML(item.id)}" data-theme="${themeFor(item)}" role="group" aria-roledescription="Karte" aria-label="${safeHTML(`${index+1} von ${total}: ${item.title}, ${fullRange(item)}`)}">
-    <div class="card-top"><span class="card-category"><span class="card-category-dot" aria-hidden="true"></span>${safeHTML(categoryFor(item))}</span><span class="card-index">${pad2(index+1)} / ${pad2(total)}</span></div>
+    <div class="card-top"><span class="card-category"><span class="card-category-dot" aria-hidden="true"></span>${safeHTML(categoryFor(item))}</span>${isPaulsBirthday(item) ? '<button class="birthday-replay" type="button" aria-label="Konfetti erneut starten" title="Konfetti erneut starten">🎉</button>' : ''}<span class="card-index">${pad2(index+1)} / ${pad2(total)}</span></div>
     <div class="card-visual" aria-hidden="true"><span class="card-halo"></span><span class="card-orbit"></span><span class="card-orbit second"></span><span class="card-emoji">${safeHTML(item.emoji)}</span><span class="card-spark one">✳</span><span class="card-spark two">✦</span></div>
     <div class="card-copy"><p class="card-eyebrow">✦ DEIN COUNTDOWN</p><h2 class="card-title">${safeHTML(item.title)}</h2><p class="card-description">${safeHTML(item.description)}</p></div>
     <div class="card-countdown" aria-label="Verbleibende Zeit"><div class="card-days"><strong class="card-days-number" data-counter="days">--</strong><span class="card-days-unit">TAGE</span></div><div class="card-hms"><div><strong data-counter="hours">--</strong><span>STD</span></div><div><strong data-counter="minutes">--</strong><span>MIN</span></div><div><strong data-counter="seconds">--</strong><span>SEK</span></div></div></div>
@@ -160,10 +260,15 @@ function goTo(index, instant=false){
   if(!visibleItems.length) return;
   activeIndex=Math.max(0,Math.min(index,visibleItems.length-1));
   const track=$('#swipe-track');
-  track.scrollTo({left:track.clientWidth*activeIndex,behavior:instant||window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  const immediate = instant || reducedMotion.matches;
+  if(isPaulsBirthday(visibleItems[activeIndex])) birthdayVibration();
+  track.scrollTo({left:track.clientWidth*activeIndex,behavior:immediate?'instant':'smooth'});
   updateNavigation();
+  if(immediate) syncBirthdayCelebration();
 }
 function renderDeck(){
+  stopConfetti();
+  lastCelebratedId = null;
   visibleItems=getItems();
   activeIndex=0;
   const track=$('#swipe-track');
@@ -172,6 +277,7 @@ function renderDeck(){
   updateCounters();
   updateNavigation();
   renderOverview();
+  syncBirthdayCelebration();
 }
 function setFilter(next){
   filter=next;
@@ -192,6 +298,24 @@ function init(){
   });
   $('#prev-card').addEventListener('click',()=>goTo(activeIndex-1));
   $('#next-card').addEventListener('click',()=>goTo(activeIndex+1));
+  $('#swipe-track').addEventListener('click',event=>{
+    if(!event.target.closest('.birthday-replay')) return;
+    event.stopPropagation();
+    launchConfetti();
+    birthdayVibration();
+  });
+  let touchStartX = null;
+  $('#swipe-track').addEventListener('touchstart',event=>{
+    touchStartX = event.changedTouches[0]?.clientX ?? null;
+  },{passive:true});
+  $('#swipe-track').addEventListener('touchend',event=>{
+    if(touchStartX === null) return;
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX;
+    const delta = touchStartX - endX;
+    const target = delta > 35 ? activeIndex + 1 : delta < -35 ? activeIndex - 1 : -1;
+    if(isPaulsBirthday(visibleItems[target])) birthdayVibration();
+    touchStartX = null;
+  },{passive:true});
   $('#swipe-track').addEventListener('scroll',()=>{
     if(rafScroll!==null) cancelAnimationFrame(rafScroll);
     rafScroll=requestAnimationFrame(()=>{
@@ -199,6 +323,7 @@ function init(){
       const track=$('#swipe-track');
       const next=Math.max(0,Math.min(visibleItems.length-1,Math.round(track.scrollLeft/Math.max(1,track.clientWidth))));
       if(next!==activeIndex){activeIndex=next;updateNavigation();}
+      syncBirthdayCelebration();
     });
   },{passive:true});
   $('#swipe-track').addEventListener('keydown',event=>{
@@ -214,6 +339,9 @@ function init(){
     if(!button)return;
     dialog.close();
     goTo(Number(button.dataset.index),true);
+  });
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden) stopConfetti();
   });
   window.addEventListener('resize',()=>{
     // Nach Drehen des iPhones an der gleichen Karte bleiben.
