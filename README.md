@@ -16,6 +16,7 @@ Ein mobiles, swipebares Countdown-Dashboard für die nächsten Feiertage, coolen
 - ☷ **Alle Termine:** Liste zum direkten Anspringen einer Karte.
 - ⬅️➡️ Alternative Navigation per Pfeilbuttons und Pfeiltasten.
 - 🌙 Dark Mode mit eigenen Farben und Motiven je Event.
+- 🎉 **Geburtstags-Special:** Auf Pauls Kachel fliegt Konfetti über den ganzen Bildschirm. Über 🎉 lässt sich die Animation wiederholen. Bei unterstützten Geräten vibriert das Handy kurz. **Wichtig:** iPhone/iOS-Browser unterstützen die Web-Vibrations-API nicht; Konfetti funktioniert dort trotzdem. Bei aktivierter Einstellung „Bewegung reduzieren“ bleibt die Animation aus.
 
 ## Lokal starten
 
