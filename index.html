@@ -2,120 +2,68 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0b101d" />
-    <meta name="description" content="Pauls Counter: Dein Countdown zu coolen Terminen, Ferien und Feiertagen im Schuljahr 2026/2027 in Nürtingen und Umgebung." />
-    <title>Pauls Counter ✦ Wann ist das nächste Highlight?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0e19" />
+    <meta name="description" content="Pauls Counter – ein Highlight nach dem anderen. Swipe durch Ferien, Feste und coole Termine." />
+    <title>Pauls Counter ✳ Swipe zum nächsten Highlight</title>
     <link rel="stylesheet" href="./styles.css" />
     <script src="./app.js" defer></script>
   </head>
   <body>
-    <div class="background-orb orb-1" aria-hidden="true"></div>
-    <div class="background-orb orb-2" aria-hidden="true"></div>
-    <div class="noise" aria-hidden="true"></div>
-
+    <div class="background-glow" aria-hidden="true"></div>
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#start" aria-label="Pauls Counter – zur Startseite">
-          <span class="brand-mark" aria-hidden="true">✳</span>
-          <span>pauls<span class="brand-accent">counter</span><span class="brand-dot">.</span></span>
+        <a href="./" class="brand" aria-label="Pauls Counter – Startseite">
+          <span class="brand-symbol" aria-hidden="true">✳</span>
+          <span>pauls<span class="brand-light">counter</span><span class="brand-period">.</span></span>
         </a>
-        <nav class="topnav" aria-label="Hauptnavigation">
-          <a class="nav-link current" href="#start">Dashboard</a>
-          <a class="nav-link" href="#termine">Termine</a>
-        </nav>
-        <div class="school-tag"><span class="status-dot" aria-hidden="true"></span> Schuljahr 26/27</div>
+        <div class="topbar-right"><span class="live-pulse" aria-hidden="true"></span><span id="today-short">HEUTE</span></div>
       </header>
 
-      <main id="start">
-        <div class="page-intro">
-          <div><p class="eyebrow"><span class="sparkle">✦</span> YOUR NEXT BIG THING</p>
-            <h1>Die Vorfreude <span class="serif-italic">beginnt hier.</span></h1>
-            <p class="subtitle">Feste, Ferien und kleine Highlights – alles im Blick. Und immer etwas, worauf du dich freuen kannst.</p>
+      <main class="main-content">
+        <div class="intro">
+          <div>
+            <p class="eyebrow"><span aria-hidden="true">✦</span> GOOD TIMES AHEAD</p>
+            <h1>Dein nächstes <em>Highlight.</em></h1>
           </div>
-          <div class="today-pill" id="today-pill" aria-label="Heutiges Datum"></div>
+          <button class="overview-trigger" type="button" id="open-overview" aria-haspopup="dialog" aria-controls="overview-dialog" aria-label="Alle Termine als Liste anzeigen"><span aria-hidden="true">☷</span><span class="overview-label">Alle Termine</span></button>
         </div>
 
-        <section class="hero" aria-labelledby="next-event-heading">
-          <div class="hero-copy">
-            <div class="section-kicker"><span class="pulse-dot" aria-hidden="true"></span> ALS NÄCHSTES</div>
-            <div id="hero-content">
-              <p class="hero-category">NÄCHSTES HIGHLIGHT</p>
-              <h2 id="next-event-heading">Dein nächster großer Moment.</h2>
-              <p class="hero-description">Die nächsten Termine werden geladen.</p>
-            </div>
-            <div class="countdown-wrap">
-              <div class="countdown-heading" id="countdown-heading">COUNTDOWN</div>
-              <div class="countdown" id="countdown" aria-label="Countdown bis zum nächsten Highlight">
-                <div class="count-unit"><strong id="count-days">--</strong><span>TAGE</span></div>
-                <span class="count-separator" aria-hidden="true">:</span>
-                <div class="count-unit"><strong id="count-hours">--</strong><span>STD.</span></div>
-                <span class="count-separator" aria-hidden="true">:</span>
-                <div class="count-unit"><strong id="count-minutes">--</strong><span>MIN.</span></div>
-                <span class="count-separator" aria-hidden="true">:</span>
-                <div class="count-unit"><strong id="count-seconds">--</strong><span>SEK.</span></div>
-              </div>
-            </div>
-            <a class="hero-cta" href="#termine">Alle Termine entdecken <span aria-hidden="true">↗</span></a>
-          </div>
-          <div class="hero-art" aria-hidden="true">
-            <span class="art-label art-label-top">GOOD TIMES AHEAD ↗</span>
-            <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
-            <span class="art-blur"></span>
-            <span id="hero-emoji" class="hero-emoji">✨</span>
-            <span class="art-star art-star-1">✳</span><span class="art-star art-star-2">✦</span>
-            <span class="art-label art-label-bottom" id="hero-date-art">DEIN NÄCHSTES HIGHLIGHT</span>
-          </div>
+        <nav class="filter-bar" id="filters" aria-label="Terminkategorie wählen">
+          <button type="button" class="filter-pill active" data-filter="event" aria-pressed="true">✨ Highlights</button>
+          <button type="button" class="filter-pill" data-filter="all" aria-pressed="false">Alle</button>
+          <button type="button" class="filter-pill" data-filter="vacation" aria-pressed="false">🌴 Ferien</button>
+          <button type="button" class="filter-pill" data-filter="off" aria-pressed="false">☀️ Schulfrei</button>
+        </nav>
+
+        <div class="deck-meta">
+          <span class="deck-meta-caption"><span class="tiny-star" aria-hidden="true">✳</span> SWIPE DURCH DEINE TERMINE</span>
+          <span class="deck-position" id="deck-position" aria-live="polite">01 / 31</span>
+        </div>
+
+        <section class="deck-area" aria-label="Countdown-Karten">
+          <div class="swipe-track" id="swipe-track" role="region" aria-roledescription="Karussell" aria-label="Karten chronologisch vom nächsten bis zum letzten Termin" tabindex="0"></div>
         </section>
 
-        <section class="stat-grid" aria-label="Übersicht">
-          <article class="stat-card"><div class="stat-label">Noch vor dir <span aria-hidden="true">↗</span></div><div class="stat-value" id="stat-highlights">–</div><div class="stat-hint">Highlights im Kalender <span aria-hidden="true">✨</span></div></article>
-          <article class="stat-card"><div class="stat-label">Nächste Ferien <span aria-hidden="true">↗</span></div><div class="stat-value stat-text" id="stat-vacation">–</div><div class="stat-hint" id="stat-vacation-sub">Der nächste Break kommt</div></article>
-          <article class="stat-card accent-stat"><div class="stat-label">Extra schulfrei <span aria-hidden="true">↗</span></div><div class="stat-value" id="stat-off">–</div><div class="stat-hint">Tage außerhalb der Ferien <span aria-hidden="true">☀</span></div></article>
-        </section>
-
-        <div class="content-layout" id="termine">
-          <section class="timeline-area" aria-labelledby="timeline-heading">
-            <div class="section-heading">
-              <div><p class="eyebrow">DON'T MISS OUT</p><h2 id="timeline-heading">Deine nächsten <span class="accent-word">Termine.</span></h2></div>
-              <span class="results-info" id="results-info" aria-live="polite"></span>
-            </div>
-            <div class="filters" role="group" aria-label="Termine filtern">
-              <button class="filter-button active" type="button" data-filter="all" aria-pressed="true">Alle</button>
-              <button class="filter-button" type="button" data-filter="event" aria-pressed="false">✨ Highlights</button>
-              <button class="filter-button" type="button" data-filter="vacation" aria-pressed="false">🌴 Ferien</button>
-              <button class="filter-button" type="button" data-filter="off" aria-pressed="false">☀️ Schulfrei</button>
-            </div>
-            <div class="list-toolbar">
-              <label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Termine suchen</span><input type="search" id="search" placeholder="Termin suchen …" autocomplete="off" /></label>
-              <label class="past-toggle"><input id="show-past" type="checkbox" /><span>Vergangene anzeigen</span></label>
-            </div>
-            <div id="selected-day" class="selected-day" hidden></div>
-            <div class="timeline" id="timeline" aria-live="polite"></div>
-            <button class="show-more" id="show-more" type="button" hidden>Mehr Termine anzeigen <span aria-hidden="true">↓</span></button>
-          </section>
-
-          <aside class="sidebar" aria-label="Kalenderübersicht">
-            <section class="side-panel calendar-panel" aria-labelledby="calendar-heading">
-              <div class="panel-topline"><span class="panel-eyebrow">AUF EINEN BLICK</span><span aria-hidden="true">◈</span></div>
-              <div class="calendar-header"><h2 id="calendar-heading">Kalender</h2><div class="calendar-actions"><button id="prev-month" type="button" aria-label="Vorheriger Monat">‹</button><button id="next-month" type="button" aria-label="Nächster Monat">›</button></div></div>
-              <p class="calendar-month" id="calendar-month"></p>
-              <div class="weekday-grid" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
-              <div id="calendar-grid" class="calendar-grid" aria-label="Kalendertage"></div>
-              <div class="calendar-legend"><span><i class="legend-dot purple"></i> Events</span><span><i class="legend-dot lime"></i> Schulfrei/Ferien</span></div>
-              <p class="calendar-hint">Datum antippen, um die Termine zu sehen.</p>
-            </section>
-            <section class="side-panel school-panel" aria-labelledby="school-panel-title">
-              <div class="panel-topline"><span class="panel-eyebrow">PAUSEN-RADAR</span><span aria-hidden="true">☀</span></div>
-              <h2 id="school-panel-title">Die nächste <span>Auszeit.</span></h2>
-              <div class="school-emoji" aria-hidden="true">🛼</div>
-              <div id="break-preview"></div>
-            </section>
-            <div class="little-note"><span aria-hidden="true">✳</span><p>Weniger „Wann ist endlich ...?“<br />Mehr <strong>„Bald ist es so weit!“</strong></p></div>
-          </aside>
+        <div class="deck-bottom">
+          <button type="button" class="deck-arrow" id="prev-card" aria-label="Vorheriger Termin" disabled><span aria-hidden="true">←</span></button>
+          <div class="deck-bottom-center">
+            <div class="progress-track"><span class="progress-fill" id="progress-fill"></span></div>
+            <p id="next-hint" class="next-hint" aria-live="polite">Nach links wischen für mehr →</p>
+          </div>
+          <button type="button" class="deck-arrow" id="next-card" aria-label="Nächster Termin"><span aria-hidden="true">→</span></button>
         </div>
       </main>
-      <footer class="footer"><div class="brand footer-brand"><span class="brand-mark" aria-hidden="true">✳</span><span>pauls<span class="brand-accent">counter</span><span class="brand-dot">.</span></span></div><p>Made for the good days ahead. ✦ Schuljahr 2026/27</p><a href="https://www.aichtal.de/fileadmin/Dateien/Website/Dateien/Formulare/Betreuung/Ferienplan_NT_2026-2027_genehmigt.pdf" target="_blank" rel="noopener noreferrer">Offizieller Ferienplan ↗</a></footer>
+      <footer class="footer"><span>✳ Schuljahr 2026/27 · Nürtingen &amp; Umland</span><a href="https://www.aichtal.de/fileadmin/Dateien/Website/Dateien/Formulare/Betreuung/Ferienplan_NT_2026-2027_genehmigt.pdf" target="_blank" rel="noopener noreferrer">Quelle ↗</a></footer>
     </div>
+
+    <dialog id="overview-dialog" class="overview-dialog" aria-labelledby="overview-title">
+      <div class="overview-header">
+        <div><p class="eyebrow">DEIN FAHRPLAN</p><h2 id="overview-title">Alle Termine <span>✦</span></h2></div>
+        <button id="close-overview" type="button" class="close-dialog" aria-label="Übersicht schließen">×</button>
+      </div>
+      <p class="overview-description">Chronologisch sortiert – tippe einen Termin an und springe direkt zur Kachel.</p>
+      <div class="overview-list" id="overview-list"></div>
+    </dialog>
   </body>
 </html>
