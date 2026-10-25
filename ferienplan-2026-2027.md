@@ -25,6 +25,19 @@ Ferientermine aus dem genehmigten Kalender der Nürtinger Schulen (und Umland) f
 
 Laut Legende umfasst die rosa Markierung **4 bewegliche Ferientage und 3 unterrichtsfreie Tage**. Die Quelle ordnet die einzelnen Daten diesen beiden Kategorien nicht separat zu.
 
+## Zusätzliche gesetzliche Feiertage (Baden-Württemberg, schulfrei)
+
+Diese gesetzlichen Feiertage fallen auf Montag bis Freitag und sind **nicht bereits durch die oben genannten Ferien oder beweglichen/unterrichtsfreien Tage abgedeckt**.
+
+| Datum | Wochentag | Feiertag |
+|---|---|---|
+| 06.05.2027 | Donnerstag | Christi Himmelfahrt |
+| 17.05.2027 | Montag | Pfingstmontag |
+
+Andere gesetzliche Feiertage im abgebildeten Zeitraum liegen auf einem Wochenende oder innerhalb der angegebenen Ferien. Das Reformationsfest (31.10.2026, schulfrei) fällt auf einen Samstag; Gründonnerstag (25.03.2027, schulfrei) ist bereits im Osterferienzeitraum enthalten.
+
+Rechtsgrundlage/Abgleich: [Feiertage in Baden-Württemberg – Innenministerium](https://im.baden-wuerttemberg.de/de/service/feiertage) und [Ferien – Kultusministerium Baden-Württemberg](https://km.baden-wuerttemberg.de/de/service/ferien).
+
 ## Quelle
 
 [Genehmigter Ferienplan 2026/2027 (PDF), Stadt Aichtal](https://www.aichtal.de/fileadmin/Dateien/Website/Dateien/Formulare/Betreuung/Ferienplan_NT_2026-2027_genehmigt.pdf) – Stand: 07.10.2025.
